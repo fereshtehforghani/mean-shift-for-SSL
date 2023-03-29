@@ -32,10 +32,40 @@ class MeanShift(nn.Module):
         proj_dim = self.encoder_q.fc.in_features // 4
 
         # projection head
-        self.q_encoder.fc = get_projector(self.encoder_q.fc.in_features, proj_dim, proj_dim)
-        self.t_encoder.fc = get_projector(self.encoder_q.fc.in_features, proj_dim, proj_dim)
+        self.q_encoder.fc = get_projector(self.encoder_q.fc.in_features, hidden_dim, proj_dim)
+        self.t_encoder.fc = get_projector(self.encoder_q.fc.in_features, hidden_dim, proj_dim)
 
         # prediction head
-        self.prediction_head = get_projector(proj_dim, proj_dim, hidden_dim)
+        self.q_prediction_head = get_projector(proj_dim, hidden_dim, hidden_dim)
+        
+        # copy query encoder to target encoder
+        for q_param, t_param in zip(self.q_encoder.parameters(), self.t_encoder.parameters()):
+            t_param.data.copy_(q_param.data)
+            t_param.requires_grad = False
+        
+        print("memory-bank size {}".format(self.memory_bank_size))
+        
+        # initialize queue and normalize the embeddings in queue
+        self.register_buffer('queue', torch.randn(self.memory_bank_size, proj_dim))
+        self.queue = nn.functional.normalize(self.queue, dim=1)
+
+        # initialize the labels queue
+        self.register_buffer('labels', -1*torch.ones(self.memory_bank_size).long())
+       
+        # intialize the queue pointer
+        self.register_buffer('queue_ptr', torch.zeros(1, dtype=torch.long))
+
+    @torch.no_grad()
+    def _momentum_update_key_encoder(self):
+        """
+        Momentum update of the key encoder
+        """
+        for q_param, t_param in zip(self.q_encoder.parameters(), self.t_encoder.parameters()):
+            t_param.data = t_param.data * self.m + q_param.data * (1. - self.m)
+
+        
+
+        
+   
 
 
