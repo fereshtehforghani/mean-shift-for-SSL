@@ -1,3 +1,7 @@
+import os
+import shutil
+import torch
+
 """Computes and stores the average and current value"""
 class AverageMeter(object):
     def __init__(self, name):
@@ -19,10 +23,6 @@ class AverageMeter(object):
     def __str__(self):
         fmtstr = '{name} {val' + self.val + '} ({avg' + self.avg + '})'
         return fmtstr.format(**self.__dict__)
-    
-import os
-import shutil
-import torch
 
 """Computes and stores the average and current value"""
 class AverageMeter(object):
@@ -96,4 +96,11 @@ class CheckpointSaver:
         if is_best:
             best_ckpt_path = os.path.join(self.save_dir, 'model_best.pth.tar')
             shutil.copyfile(ckpt_path, best_ckpt_path)
+
+# checkpoint_saver = CheckpointSaver(save_dir)
+# checkpoint_saver.save_each_checkpoint(state, epoch)
+# checkpoint_saver.save_checkpoint(state, is_best)
+
+
+
 
