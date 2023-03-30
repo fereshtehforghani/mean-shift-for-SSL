@@ -5,6 +5,7 @@ from MSF import *
 import torch.backends.cudnn as cudnn
 from utils.util import *
 import time
+import sys
 
 def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
     """
@@ -39,17 +40,28 @@ def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
 
         # print info
         if (idx + 1) % 100 == 0:
-            print('Train: [{0}][{1}/{2}]\t'
-                  'BT {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'DT {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'purity {purity.val:.3f} ({purity.avg:.3f})\t'
-                  'loss {loss.val:.3f} ({loss.avg:.3f})\t'.format(
-                   epoch, idx + 1, len(train_loader), batch_time=batch_train_time,
-                   purity=purity_meter,
-                   loss=loss_meter))
+            print(f"Train: [{epoch}][{idx+1}/{len(train_loader)}]\t"
+                  f"BT {batch_train_time.val:.3f} ({batch_train_time.avg:.3f})\t"
+                  f"purity {purity_meter.val:.3f} ({purity_meter.avg:.3f})\t"
+                  f"loss {loss_meter.val:.3f} ({loss_meter.avg:.3f})\t")
             sys.stdout.flush()
             sys.stdout.flush()
+    # save the model
+    if epoch % 10 == 0:
+        print('Saving checkpoint!!!!!!!')
+        state = {
+            'opt': args,
+            'state_dict': MSF_model.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'epoch': i,
+        }
 
+        save_file = os.path.join(args.checkpoint_path, 'ckpt_epoch_{epoch}.pth'.format(epoch=i))
+        torch.save(state, save_file)
+
+        # help release GPU memory
+        del state
+        torch.cuda.empty_cache()
     return loss_meter.avg
 
 def main():
@@ -99,6 +111,15 @@ def main():
             args.start_epoch = ckpt['epoch'] + 1
     
     # train loop
+    for i in range(args.start_epoch, args.epochs + 1):
+        adjust_learning_rate(epoch, args, optimizer)
+        print("Training...")
+
+        time1 = time.time()
+        train_epoch(i, train_dataloader, MSF_model, optimizer, args)
+
+        time2 = time.time()
+        print('Epoch {}, total time {:.2f}'.format(i, time2 - time1))
 
 
 
