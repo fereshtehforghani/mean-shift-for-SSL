@@ -3,12 +3,54 @@ from arg_parser import *
 from dataset import *
 from MSF import *
 import torch.backends.cudnn as cudnn
+from utils.util import *
+import time
 
 def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
     """
     Training for one epoch
     """
     MeanShift.train()
+    
+    batch_train_time = AverageMeter(name='batch_train_time')
+    loss_meter = AverageMeter(name='loss')
+    purity_meter = AverageMeter(name='purity')
+
+    start_time = time.time()
+    for idx, (indices, (q_img, t_img), labels) in enumerate(train_loader):
+        # put data to gpu
+        q_img = q_img.cuda(non_blocking=True)
+        t_img = t_img.cuda(non_blocking=True)
+        labels = labels.cuda(non_blocking=True)
+
+        # training process
+        loss, purity = MSF_model(im_q=q_img, im_t=t_img, labels=labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # update meters
+        loss_meter.update(loss.item(), q_img.size(0))
+        purity_meter.update(purity.item(), q_img.size(0))
+
+        torch.cuda.synchronize()
+        batch_train_time.update(time.time() - start_time)
+        start_time = time.time()
+
+        # print info
+        if (idx + 1) % 100 == 0:
+            print('Train: [{0}][{1}/{2}]\t'
+                  'BT {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'DT {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'purity {purity.val:.3f} ({purity.avg:.3f})\t'
+                  'loss {loss.val:.3f} ({loss.avg:.3f})\t'.format(
+                   epoch, idx + 1, len(train_loader), batch_time=batch_train_time,
+                   purity=purity_meter,
+                   loss=loss_meter))
+            sys.stdout.flush()
+            sys.stdout.flush()
+
+    return loss_meter.avg
 
 def main():
     args = parse_args()
