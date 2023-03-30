@@ -8,7 +8,7 @@ def parse_args():
                         help='Use full or subset of the dataset (default: imagenet)')
     #parser.add_argument('--debug', action='store_true', help='Enable debug mode')
 
-    parser.add_argument('--print_freq', type=int, default=100, help='Print frequency (default: 100)')
+    parser.add_argument('--print_freq', type=int, help='Print frequency (default: 100)')
     parser.add_argument('--save_freq', type=int, default=10, help='Save frequency (default: 10)')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size (default: 256)')
     parser.add_argument('--num_workers', type=int, default=24, help='Number of workers to use (default: 24)')
