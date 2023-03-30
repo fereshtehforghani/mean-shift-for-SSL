@@ -2,7 +2,11 @@
 # Reproducing MeanShift for Self-Supervised Learning 
 
 This repository contains the code used to reproduce the MeanShift for Self-Supervised Learning project. The project aims to explore the use of MeanShift clustering for self-supervised learning of image representations.
+
+
 ![Alt Text](https://umbcvision.github.io/MSF/assets/images/teaser.gif)
+
+
 ### Setup
 
 ### contact
