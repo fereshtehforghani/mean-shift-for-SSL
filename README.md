@@ -6,7 +6,7 @@ This repository contains the code used to reproduce the MeanShift for Self-Super
 ### Setup
 
 ### contact
-If you have any questions or comments, please feel free to contact us at hosseini99.zari@gmail.com.
+If you have any questions or comments, please feel free to contact us at hosseini99.zari@gmail.com and fereshtforghani@gmail.com.
 
 ```
 @InProceedings{Koohpayegani_2021_ICCV,
