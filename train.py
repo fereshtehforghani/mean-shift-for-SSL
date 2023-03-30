@@ -6,6 +6,7 @@ import torch.backends.cudnn as cudnn
 from utils.util import *
 import time
 import sys
+import builtins
 
 def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
     """
@@ -67,6 +68,12 @@ def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
 def main():
     args = parse_args()
     args.start_epoch = 1
+
+    logger = get_logger(logpath=os.path.join(args.checkpoint_path, 'logs'),filepath=os.path.abspath(__file__))
+
+    def print_pass(*arg):
+        logger.info(*arg)
+    builtins.print = print_pass
 
     print(args)
     os.makedirs(args.checkpoint_path, exist_ok=True)
