@@ -119,7 +119,7 @@ def main():
     
     # train loop
     for i in range(args.start_epoch, args.epochs + 1):
-        adjust_learning_rate(epoch, args, optimizer)
+        adjust_learning_rate(i, args, optimizer)
         print("Training...")
 
         time1 = time.time()

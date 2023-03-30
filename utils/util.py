@@ -1,53 +1,38 @@
 import os
 import shutil
 import torch
-
-"""Computes and stores the average and current value"""
-class AverageMeter(object):
-    def __init__(self, name):
-        self.name = name
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-    def __str__(self):
-        fmtstr = '{name} {val' + self.val + '} ({avg' + self.avg + '})'
-        return fmtstr.format(**self.__dict__)
-
-"""Computes and stores the average and current value"""
-class AverageMeter(object):
-    def __init__(self, name):
-        self.name = name
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
-
-    def __str__(self):
-        fmtstr = '{name} {val' + self.val + '} ({avg' + self.avg + '})'
-        return fmtstr.format(**self.__dict__)
-    
 import logging
+import math
 
+"""Computes and stores the average and current value"""
+class AverageMeter(object):
+    def __init__(self, name):
+        self.name = name
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+    def __str__(self):
+        fmtstr = '{name} {val' + self.val + '} ({avg' + self.avg + '})'
+        return fmtstr.format(**self.__dict__)
+
+def adjust_learning_rate(epoch, args, optimizer):
+    # Epoch_start = 1, we have to subtract 1
+    epoch = epoch - 1
+    new_lr = args.learning_rate * 0.5 * (1. + math.cos(math.pi * epoch1 / args.epochs))
+    print('New LR: {}'.format(new_lr))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = new_lr
 
 def get_logger(logpath, filepath, package_files=[], displaying=True, saving=True, debug=False):
     
