@@ -33,15 +33,15 @@ class MeanShift(nn.Module):
         self.t_encoder = resnet50()
         
         # embedding dimensions
-        hidden_dim = self.encoder_q.fc.in_features * 2
-        proj_dim = self.encoder_q.fc.in_features // 4
+        hidden_dim = self.q_encoder.fc.in_features * 2
+        proj_dim = self.q_encoder.fc.in_features // 4
 
         # projection head
-        self.q_encoder.fc = get_projector(self.encoder_q.fc.in_features, hidden_dim, proj_dim)
-        self.t_encoder.fc = get_projector(self.encoder_q.fc.in_features, hidden_dim, proj_dim)
+        self.q_encoder.fc = get_projector(self.q_encoder.fc.in_features, hidden_dim, proj_dim)
+        self.t_encoder.fc = get_projector(self.t_encoder.fc.in_features, hidden_dim, proj_dim)
 
         # prediction head
-        self.q_prediction_head = get_projector(proj_dim, hidden_dim, hidden_dim)
+        self.q_prediction_head = get_projector(proj_dim, hidden_dim, proj_dim)
         
         # copy query encoder to target encoder
         for q_param, t_param in zip(self.q_encoder.parameters(), self.t_encoder.parameters()):
@@ -72,7 +72,8 @@ class MeanShift(nn.Module):
         """
         # compute query features
         q_features = self.q_encoder(q_img)
-        q_proj = nn.functional.normalize(self.q_prediction_head(q_features), dim=1)
+        query = self.q_prediction_head(q_features)
+        q_proj = nn.functional.normalize(query, dim=1)
         
         # compute target features
         with torch.no_grad():
@@ -88,7 +89,7 @@ class MeanShift(nn.Module):
 
             # undo shuffle
             current_target = current_target[reverse_ids].detach()
-            self._dequeue_and_enqueue(t_img.shape[0], current_target, labels)
+            self._dequeue_and_enqueue(current_target, labels)
 
         
         # calculate mean shift regression loss
@@ -119,18 +120,19 @@ class MeanShift(nn.Module):
         return loss, purity
     
     @torch.no_grad()
-    def _momentum_update_key_encoder(self):
+    def _momentum_update_target_encoder(self):
         """
-        Momentum update of the key encoder
+        Momentum update of the target encoder
         """
         for q_param, t_param in zip(self.q_encoder.parameters(), self.t_encoder.parameters()):
             t_param.data = t_param.data * self.m + q_param.data * (1. - self.m)
     
     @torch.no_grad()
-    def _dequeue_and_enqueue(self, batch_size, current_target, labels):
+    def _dequeue_and_enqueue(self, current_target, labels):
         """
         Update the queue and the labels queue
         """
+        batch_size = current_target.shape[0]
         ptr = int(self.queue_ptr)
         assert self.memory_bank_size % batch_size == 0
 

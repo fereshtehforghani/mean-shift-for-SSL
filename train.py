@@ -7,12 +7,14 @@ from utils.util import *
 import time
 import sys
 import builtins
+import collections 
+import collections.abc
 
 def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
     """
     Training for one epoch
     """
-    MeanShift.train()
+    MSF_model.train()
     
     batch_train_time = AverageMeter(name='batch_train_time')
     loss_meter = AverageMeter(name='loss')
@@ -26,7 +28,7 @@ def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
         labels = labels.cuda(non_blocking=True)
 
         # training process
-        loss, purity = MSF_model(im_q=q_img, im_t=t_img, labels=labels)
+        loss, purity = MSF_model(q_img=q_img, t_img=t_img, labels=labels)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -54,10 +56,10 @@ def train_epoch(epoch, train_loader, MSF_model, optimizer, args):
             'opt': args,
             'state_dict': MSF_model.state_dict(),
             'optimizer': optimizer.state_dict(),
-            'epoch': i,
+            'epoch': epoch,
         }
 
-        save_file = os.path.join(args.checkpoint_path, 'ckpt_epoch_{epoch}.pth'.format(epoch=i))
+        save_file = os.path.join(args.checkpoint_path, 'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
         torch.save(state, save_file)
 
         # help release GPU memory

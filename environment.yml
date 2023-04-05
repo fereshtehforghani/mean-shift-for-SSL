@@ -1,9 +1,13 @@
-name: mean-shift-for-SSL
+name: mean-shift-for-SSL-2
 channels:
+  - anaconda
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - python=3.7
-  - pytorch>=1.4
-  - torchvision>=0.5.1
+  - python-dateutil
+  - python-flatbuffers
+  - pytorch
+  - torchvision
   - faiss-gpu

@@ -3,7 +3,8 @@ import torch.nn as nn
 import random
 from PIL import ImageFilter
 import os
-import torchvision.transforms as transforms, datasets
+import torchvision.transforms as transforms
+import torchvision.datasets as datasets
 
 class GaussianBlur(object):
     """Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""

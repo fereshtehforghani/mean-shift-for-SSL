@@ -38,6 +38,7 @@ def parse_args():
     parser.add_argument('--weights', type=str, help='Weights to initialize the model from')
     parser.add_argument('--resume', default='', type=str,
                         help='Path to latest checkpoint (default: none)')
+    parser.add_argument('--restart', action='store_true', help='Restart training from scratch')
 
     # GPU setting
     parser.add_argument('--gpu', default=None, type=int, help='GPU id to use')
