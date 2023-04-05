@@ -82,6 +82,52 @@ class CheckpointSaver:
             best_ckpt_path = os.path.join(self.save_dir, 'model_best.pth.tar')
             shutil.copyfile(ckpt_path, best_ckpt_path)
 
+arch_to_key = {
+    'alexnet': 'alexnet',
+    'alexnet_moco': 'alexnet',
+    'resnet18': 'resnet18',
+    'resnet50': 'resnet50',
+    'rotnet_r50': 'resnet50',
+    'rotnet_r18': 'resnet18',
+    'resnet18_moco': 'resnet18',
+    'resnet_moco': 'resnet50',
+}
+
+model_names = list(arch_to_key.keys())
+
+def create_path(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+class ProgressMeter:
+    def __init__(self, num_batches, meters, prefix=""):
+        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
+        self.meters = meters
+        self.prefix = prefix
+
+    def display(self, batch):
+        entries = [f"{self.prefix}{self.batch_fmtstr.format(batch)}"]
+        entries += [str(meter) for meter in self.meters]
+        return '\t'.join(entries)
+
+    def _get_batch_fmtstr(self, num_batches):
+        num_digits = len(str(num_batches // 1))
+        fmt = f"{{:0{num_digits}d}}"
+        return f"[{fmt}/{fmt.format(num_batches)}]"
+
+def accuracy(output, target, topk=(1,)):
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = target.size(0)
+
+        _, pred = output.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(target.view(1, -1).expand_as(pred))
+
+        res = [correct[:k].view(-1).float().sum(0, keepdim=True).mul_(100.0 / batch_size) for k in topk]
+
+        return res
+
 # checkpoint_saver = CheckpointSaver(save_dir)
 # checkpoint_saver.save_each_checkpoint(state, epoch)
 # checkpoint_saver.save_checkpoint(state, is_best)
