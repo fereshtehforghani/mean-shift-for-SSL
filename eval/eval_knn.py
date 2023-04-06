@@ -26,35 +26,11 @@ from torchvision.models.resnet import resnet18, resnet50
 from torchvision.models.alexnet import AlexNet as alexnet
 from torchvision.models.mobilenet import MobileNetV2 as mobilenet
 from .eval_linear import load_weights
+from arg_parser import *
+ 
 
 
-parser = argparse.ArgumentParser(description='NN evaluation')
-parser.add_argument('data', metavar='DIR', help='path to dataset')
-parser.add_argument('--dataset', type=str, default='imagenet',
-                    choices=['imagenet', 'imagenet100', 'imagenet-lt'],
-                    help='use full or subset of the dataset')
-parser.add_argument('-j', '--workers', default=8, type=int,
-                    help='number of data loading workers (default: 4)')
-parser.add_argument('-a', '--arch', type=str, default='alexnet',
-                        choices=['alexnet' , 'resnet18' , 'resnet50', 'mobilenet' ,
-                                 'l_resnet18', 'l_resnet50', 
-                                 'two_resnet50', 'one_resnet50', 
-                                 'moco_alexnet' , 'moco_resnet18' , 'moco_resnet50', 'moco_mobilenet', 'resnet50w5', 'teacher_resnet18',  'teacher_resnet50',
-                                 'sup_alexnet' , 'sup_resnet18' , 'sup_resnet50', 'sup_mobilenet', 'pt_alexnet', 'swav_resnet50', 'byol_resnet50'])
-parser.add_argument('-b', '--batch-size', default=256, type=int,
-                    help='mini-batch size (default: 256), this is the total '
-                         'batch size of all GPUs on the current node when '
-                         'using Data Parallel or Distributed Data Parallel')
-parser.add_argument('-p', '--print-freq', default=90, type=int,
-                    help='print frequency (default: 10)')
-parser.add_argument('--save', default='./output/cluster_alignment_1', type=str,
-                    help='experiment output directory')
-parser.add_argument('--weights', dest='weights', type=str,
-                    help='pre-trained model weights')
-parser.add_argument('--load_cache', action='store_true',
-                    help='should the features be recomputed or loaded from the cache')
-parser.add_argument('-k', default=1, type=int, help='k in kNN')
-parser.add_argument('--debug', action='store_true', help='whether in debug mode or not')
+
 
 TEMP = 0.04
 
@@ -62,8 +38,8 @@ TEMP = 0.04
 def main():
     global logger
 
-    args = parser.parse_args()
-    makedirs(args.save)
+    args = parse_eval_knn_args()
+    create_path(args.save)
 
     if not args.debug:
         logger = get_logger(
@@ -168,7 +144,7 @@ def get_model(args):
         model = torch.nn.DataParallel(model).cuda()
 
     elif args.arch == 'l_resnet18' :
-        model = l_resnet18()
+        model = models.l_resnet18()
         model.fc = nn.Sequential()
         model = torch.nn.DataParallel(model).cuda()
         checkpoint = torch.load(args.weights)
@@ -240,7 +216,7 @@ def get_model(args):
         print(msg)
 
     elif args.arch == 'byol_resnet50' :
-        model = byol_resnet50()
+        model = models.byol_resnet50()
         model.fc = nn.Sequential()
         checkpoint = torch.load(args.weights)
         if 'model' in checkpoint:
@@ -292,13 +268,13 @@ def get_model(args):
         model.module.encoder_q.fc = nn.Sequential()
 
     elif args.arch == 'resnet50w5':
-        model = resnet50w5()
+        model = models.resnet50w5()
         model.l2norm = None
         load_weights(model, args.weights)
         model = torch.nn.DataParallel(model).cuda()
 
     elif args.arch == 'swav_resnet50':
-        model = swav_resnet50()
+        model = models.swav_resnet50()
         model.l2norm = None
         load_weights(model, args.weights)
         model = torch.nn.DataParallel(model).cuda()
