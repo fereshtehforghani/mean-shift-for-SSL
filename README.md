@@ -8,26 +8,6 @@ This repository contains the code used to reproduce the MeanShift for Self-Super
 
 
 ### Setup
-\usepackage{qtree}
-
-\Tree [.mean-shift-for-SSL
-        [.github/workflows ]
-        [.idea ]
-        [BlenderModels ]
-        [JsonConversionScripts ]
-        [Other Assets ]
-        [.bmlSUP\_Project
-            [.idea ]
-            [Assets ]
-            [Packages
-                [.bmlSUP ]
-            ]
-            [ProjectSettings ]
-            [UserSettings ]
-        ]
-        [doc\_projects ]
-      ]
-
 ### contact
 If you have any questions or comments, please feel free to contact us at hosseini99.zari@gmail.com and fereshtforghani@gmail.com.
 
