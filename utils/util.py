@@ -6,8 +6,9 @@ import math
 
 """Computes and stores the average and current value"""
 class AverageMeter(object):
-    def __init__(self, name):
+    def __init__(self, name, floating_point=':f'):
         self.name = name
+        self.floating_point = floating_point
         self.reset()
 
     def reset(self):
@@ -23,7 +24,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
     def __str__(self):
-        fmtstr = '{name} {val' + self.val + '} ({avg' + self.avg + '})'
+        fmtstr = '{name} {val' + self.floating_point + '} ({avg' + self.floating_point + '})'
         return fmtstr.format(**self.__dict__)
 
 def adjust_learning_rate(epoch, args, optimizer):
@@ -124,7 +125,7 @@ def accuracy(output, target, topk=(1,)):
         pred = pred.t()
         correct = pred.eq(target.view(1, -1).expand_as(pred))
 
-        res = [correct[:k].view(-1).float().sum(0, keepdim=True).mul_(100.0 / batch_size) for k in topk]
+        res = [correct[:k].reshape(-1).float().sum(0, keepdim=True).mul_(100.0 / batch_size) for k in topk]
 
         return res
 
@@ -132,6 +133,21 @@ def accuracy(output, target, topk=(1,)):
 # checkpoint_saver.save_each_checkpoint(state, epoch)
 # checkpoint_saver.save_checkpoint(state, is_best)
 
+"""Computes and stores the average and current value"""
+class ProgressMeter(object):
+    def __init__(self, num_batches, meters, prefix=""):
+        self.batch_fmtstr = self._get_batch_fmtstr(num_batches)
+        self.meters = meters
+        self.prefix = prefix
 
+    def display(self, batch):
+        entries = [self.prefix + self.batch_fmtstr.format(batch)]
+        entries += [str(meter) for meter in self.meters]
+        return '\t'.join(entries)
+
+    def _get_batch_fmtstr(self, num_batches):
+        num_digits = len(str(num_batches // 1))
+        fmt = '{:' + str(num_digits) + 'd}'
+        return '[' + fmt + '/' + fmt.format(num_batches) + ']'
 
 

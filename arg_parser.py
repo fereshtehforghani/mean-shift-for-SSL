@@ -59,10 +59,10 @@ def parse_eval_linear_args():
                         help='path to dataset')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('-a', '--arch', default='resnet18',
+    parser.add_argument('-a', '--arch', default='resnet50',
                         help='model architecture: ' +
                             ' | '.join(model_names) +
-                            ' (default: resnet18)')
+                            ' (default: resnet50)')
     parser.add_argument('--epochs', default=40, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
@@ -94,5 +94,39 @@ def parse_eval_linear_args():
     parser.add_argument('--lr_schedule', type=str, default='15,30,40',
                         help='lr drop schedule')
 
+    opt = parser.parse_args()
+    
+    return opt
 
+def parse_eval_knn_args():
+    parser = argparse.ArgumentParser(description='NN evaluation')
+    parser.add_argument('data', metavar='DIR', help='path to dataset')
+    parser.add_argument('--dataset', type=str, default='imagenet',
+                        choices=['imagenet', 'imagenet100', 'imagenet-lt'],
+                        help='use full or subset of the dataset')
+    parser.add_argument('-j', '--workers', default=8, type=int,
+                        help='number of data loading workers (default: 4)')
+    parser.add_argument('-a', '--arch', type=str, default='resnet50',
+                            choices=['alexnet' , 'resnet18' , 'resnet50', 'mobilenet' ,
+                                    'l_resnet18', 'l_resnet50', 
+                                    'two_resnet50', 'one_resnet50', 
+                                    'moco_alexnet' , 'moco_resnet18' , 'moco_resnet50', 'moco_mobilenet', 'resnet50w5', 'teacher_resnet18',  'teacher_resnet50',
+                                    'sup_alexnet' , 'sup_resnet18' , 'sup_resnet50', 'sup_mobilenet', 'pt_alexnet', 'swav_resnet50', 'byol_resnet50'])
+    parser.add_argument('-b', '--batch-size', default=256, type=int,
+                        help='mini-batch size (default: 256), this is the total '
+                            'batch size of all GPUs on the current node when '
+                            'using Data Parallel or Distributed Data Parallel')
+    parser.add_argument('-p', '--print-freq', default=90, type=int,
+                        help='print frequency (default: 10)')
+    parser.add_argument('--save', default='./output/cluster_alignment_1', type=str,
+                        help='experiment output directory')
+    parser.add_argument('--weights', dest='weights', type=str,
+                        help='pre-trained model weights')
+    parser.add_argument('--load_cache', action='store_true',
+                        help='should the features be recomputed or loaded from the cache')
+    parser.add_argument('-k', default=1, type=int, help='k in kNN')
+    parser.add_argument('--debug', action='store_true', help='whether in debug mode or not')
 
+    opt = parser.parse_args()
+    
+    return opt

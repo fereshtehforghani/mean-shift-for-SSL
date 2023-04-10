@@ -196,17 +196,11 @@ def main_worker(args):
 
         # modify lr
         lr_scheduler.step()
-        # logger.info('LR: {:f}'.format(lr_scheduler.get_last_lr()[-1]))
 
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
-        # def save_checkpoint(self, state, is_best):
-        #     ckpt_path = os.path.join(self.save_dir, 'checkpoint.pth.tar')
-        #     torch.save(state, ckpt_path)
-        #     if is_best:
-        #         best_ckpt_path = os.path.join(self.save_dir, 'model_best.pth.tar')
-        #         shutil.copyfile(ckpt_path, best_ckpt_path)
+
         state = {
             'epoch': epoch + 1,
             'state_dict': linear.state_dict(),
@@ -214,6 +208,7 @@ def main_worker(args):
             'optimizer': optimizer.state_dict(),
             'lr_scheduler': lr_scheduler.state_dict(),
         }
+        args.checkpoint_path = "output/mean_shift_default"
         if is_best:
             save_file = os.path.join(args.checkpoint_path, 'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
             torch.save(state, save_file)
