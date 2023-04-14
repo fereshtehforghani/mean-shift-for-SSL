@@ -25,27 +25,18 @@ best_acc1 = 0
 
 def main():
     global logger
-
     args = parse_eval_linear_args()
     create_path(args.save)
     logger = get_logger(logpath=os.path.join(args.save, 'logs'), filepath=os.path.abspath(__file__))
     logger.info(args)
-
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
         cudnn.deterministic = True
-        warnings.warn('You have chosen to seed training. '
-                      'This will turn on the CUDNN deterministic setting, '
-                      'which can slow down your training considerably! '
-                      'You may see unexpected behavior when restarting '
-                      'from checkpoints.')
-
     main_worker(args)
 
 def load_weights(model, wts_path):
     wts = torch.load(wts_path)
-    # pdb.set_trace()
     if 'state_dict' in wts:
         ckpt = wts['state_dict']
     elif 'model' in wts:
@@ -53,9 +44,9 @@ def load_weights(model, wts_path):
     else:
         ckpt = wts
 
-
-
     ckpt = {k.replace('module.', ''): v for k, v in ckpt.items()}
+    ckpt = {k.replace('q_encoder.', ''): v for k, v in ckpt.items()}
+    ckpt = {k.replace('t_encoder.', ''): v for k, v in ckpt.items()}
     state_dict = {}
 
     for m_key, m_val in model.state_dict().items():
@@ -70,26 +61,9 @@ def load_weights(model, wts_path):
 
 
 def get_model(arch, wts_path):
-    if arch == 'alexnet':
-        model = AlexNet()
-        model.fc = nn.Sequential()
-        load_weights(model, wts_path)
-    elif arch == 'pt_alexnet':
-        model = models.alexnet()
-        classif = list(model.classifier.children())[:5]
-        model.classifier = nn.Sequential(*classif)
-        load_weights(model, wts_path)
-    elif arch == 'mobilenet':
-        model = MobileNetV2()
-        model.fc = nn.Sequential()
-        load_weights(model, wts_path)
-    elif 'resnet' in arch:
-        model = models.__dict__[arch]()
-        model.fc = nn.Sequential()
-        load_weights(model, wts_path)
-    else:
-        raise ValueError('arch not found: ' + arch)
-
+    model = models.__dict__[arch]()
+    model.fc = nn.Sequential()
+    load_weights(model, wts_path)
     for p in model.parameters():
         p.requires_grad = False
 
@@ -100,8 +74,7 @@ def main_worker(args):
     global best_acc1
     traindir = os.path.join(args.data, 'train')
     valdir = os.path.join(args.data, 'val')
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
     train_transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
@@ -119,23 +92,11 @@ def main_worker(args):
 
 
     train_dataset = datasets.ImageFolder(traindir, train_transform)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True,
-    )
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
 
-    val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, val_transform),
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True,
-    )
+    val_loader = torch.utils.data.DataLoader(datasets.ImageFolder(valdir, val_transform), batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True)
 
-    train_val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(traindir, val_transform),
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True,
-    )
+    train_val_loader = torch.utils.data.DataLoader(datasets.ImageFolder(traindir, val_transform), batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True)
 
     backbone = get_model(args.arch, args.weights)
     backbone = nn.DataParallel(backbone).cuda()
@@ -144,7 +105,7 @@ def main_worker(args):
 
     cached_feats = '%s/var_mean.pth.tar' % args.save
     if not os.path.exists(cached_feats):
-        train_feats, _ = get_feats(train_val_loader, backbone, args)
+        train_feats, _ = get_features(train_val_loader, backbone, args)
         train_var, train_mean = torch.var_mean(train_feats, dim=0)
         torch.save((train_var, train_mean), cached_feats)
     else:
@@ -153,14 +114,11 @@ def main_worker(args):
     linear = nn.Sequential(
         Normalize(),
         FullBatchNorm(train_var, train_mean),
-        nn.Linear(get_channels(args.arch), len(train_dataset.classes)),
+        nn.Linear(2048, len(train_dataset.classes)),
     )
     linear = linear.cuda()
 
-    optimizer = torch.optim.SGD(linear.parameters(),
-                                args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(linear.parameters(), args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     sched = [int(x) for x in args.lr_schedule.split(',')]
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -229,23 +187,6 @@ class FullBatchNorm(nn.Module):
 
     def forward(self, x):
         return (x - self.mean) * self.inv_std
-
-
-def get_channels(arch):
-    if arch == 'alexnet':
-        c = 4096
-    elif arch == 'pt_alexnet':
-        c = 4096
-    elif arch == 'resnet50':
-        c = 2048
-    elif arch == 'resnet18':
-        c = 512
-    elif arch == 'mobilenet':
-        c = 1280
-    else:
-        raise ValueError('arch not found: ' + arch)
-    return c
-
 
 def train(train_loader, backbone, linear, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
@@ -343,7 +284,7 @@ def normalize(x):
     return x / x.norm(2, dim=1, keepdim=True)
 
 
-def get_feats(loader, model, args):
+def get_features(loader, model, args):
     batch_time = AverageMeter('Time', ':6.3f')
     progress = ProgressMeter(
         len(loader),
@@ -352,7 +293,7 @@ def get_feats(loader, model, args):
 
     # switch to evaluate mode
     model.eval()
-    feats, labels, ptr = None, None, 0
+    features, labels, ptr = None, None, 0
 
     with torch.no_grad():
         end = time.time()
@@ -364,10 +305,10 @@ def get_feats(loader, model, args):
             inds = torch.arange(B) + ptr
 
             if not ptr:
-                feats = torch.zeros((len(loader.dataset), D)).float()
+                features = torch.zeros((len(loader.dataset), D)).float()
                 labels = torch.zeros(len(loader.dataset)).long()
 
-            feats.index_copy_(0, inds, cur_feats)
+            features.index_copy_(0, inds, cur_feats)
             labels.index_copy_(0, inds, cur_targets)
             ptr += B
 
@@ -378,8 +319,7 @@ def get_feats(loader, model, args):
             if i % args.print_freq == 0:
                 logger.info(progress.display(i))
 
-    return feats, labels
-
+    return features, labels
 
 if __name__ == '__main__':
     main()

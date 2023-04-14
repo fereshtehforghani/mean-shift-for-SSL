@@ -83,18 +83,7 @@ class CheckpointSaver:
             best_ckpt_path = os.path.join(self.save_dir, 'model_best.pth.tar')
             shutil.copyfile(ckpt_path, best_ckpt_path)
 
-arch_to_key = {
-    'alexnet': 'alexnet',
-    'alexnet_moco': 'alexnet',
-    'resnet18': 'resnet18',
-    'resnet50': 'resnet50',
-    'rotnet_r50': 'resnet50',
-    'rotnet_r18': 'resnet18',
-    'resnet18_moco': 'resnet18',
-    'resnet_moco': 'resnet50',
-}
-
-model_names = list(arch_to_key.keys())
+model_names = ['resnet50']
 
 def create_path(path):
     if not os.path.exists(path):
@@ -125,13 +114,9 @@ def accuracy(output, target, topk=(1,)):
         pred = pred.t()
         correct = pred.eq(target.view(1, -1).expand_as(pred))
 
-        res = [correct[:k].reshape(-1).float().sum(0, keepdim=True).mul_(100.0 / batch_size) for k in topk]
+        res = [correct[:k].contiguous().view(-1).float().sum(0, keepdim=True).mul_(100.0 / batch_size) for k in topk]
 
         return res
-
-# checkpoint_saver = CheckpointSaver(save_dir)
-# checkpoint_saver.save_each_checkpoint(state, epoch)
-# checkpoint_saver.save_checkpoint(state, is_best)
 
 """Computes and stores the average and current value"""
 class ProgressMeter(object):

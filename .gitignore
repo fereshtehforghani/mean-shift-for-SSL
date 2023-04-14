@@ -131,3 +131,6 @@ dmypy.json
 # output and datase folders
 output/
 my_datasets/
+
+# .png files
+*.png

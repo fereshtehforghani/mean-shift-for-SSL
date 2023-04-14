@@ -6,7 +6,6 @@ def parse_args():
     parser.add_argument('--dataset', type=str, default='imagenet',
                         choices=['imagenet', 'imagenet100'],
                         help='Use full or subset of the dataset (default: imagenet)')
-    #parser.add_argument('--debug', action='store_true', help='Enable debug mode')
 
     parser.add_argument('--print_freq', type=int, help='Print frequency (default: 100)')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size (default: 256)')
@@ -15,10 +14,6 @@ def parse_args():
 
     # Optimization
     parser.add_argument('--learning_rate', type=float, default=0.01, help='Learning rate (default: 0.01)')
-    # parser.add_argument('--lr_decay_epochs', type=str, default='90,120',
-    #                     help='Where to decay learning rate, can be a list (default: 90,120)')
-    # parser.add_argument('--lr_decay_rate', type=float, default=0.2, help='Decay rate for learning rate (default: 0.2)')
-    #parser.add_argument('--cos', action='store_true', help='Enable cosine learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='Weight decay (default: 1e-4)')
     parser.add_argument('--sgd_momentum', type=float, default=0.9, help='SGD momentum (default: 0.9)')
 
@@ -47,9 +42,6 @@ def parse_args():
                         help='Path to save checkpoints (default: output/mean_shift_default)')
 
     opt = parser.parse_args()
-
-    # iterations = opt.lr_decay_epochs.split(',')
-    # opt.lr_decay_epochs = [int(it) for it in iterations]
 
     return opt
 
